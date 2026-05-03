@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>L'IMPOSTORE</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0f;
+  --surface: #111118;
+  --surface2: #1a1a24;
+  --border: #2a2a3a;
+  --red: #ff2d55;
+  --red-dim: #ff2d5520;
+  --blue: #007aff;
+  --blue-dim: #007aff20;
+  --green: #30d158;
+  --green-dim: #30d15820;
+  --yellow: #ffd60a;
+  --yellow-dim: #ffd60a20;
+  --purple: #bf5af2;
+  --text: #f0f0f8;
+  --text-dim: #888899;
+  --radius: 14px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ---- NOISE OVERLAY ---- */
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events:none; z-index:1000; opacity:.5;
+}
+
+.screen { display:none; min-height:100vh; padding:20px; animation: fadeIn .3s ease; }
+.screen.active { display:flex; flex-direction:column; align-items:center; }
+
+@keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+@keyframes glow { 0%,100%{box-shadow:0 0 20px var(--red)} 50%{box-shadow:0 0 40px var(--red), 0 0 80px var(--red)} }
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+@keyframes countIn { from{transform:scale(3);opacity:0} to{transform:scale(1);opacity:1} }
+@keyframes spin { to{transform:rotate(360deg)} }
+
+/* ---- TYPOGRAPHY ---- */
+.logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(48px, 12vw, 96px);
+  letter-spacing: 6px;
+  line-height: 1;
+  background: linear-gradient(135deg, var(--red) 0%, var(--purple) 50%, var(--blue) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: float 4s ease-in-out infinite;
+  text-align: center;
+}
+
+.logo-sub {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 8px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  text-align: center;
+  margin-top: -8px;
+}
+
+h2 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 32px;
+  letter-spacing: 3px;
+}
+
+/* ---- BUTTONS ---- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 14px 28px;
+  border-radius: var(--radius);
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  border: none;
+  transition: all .2s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  width: 100%;
+  max-width: 340px;
+}
+
+.btn:active { transform: scale(.97); }
+
+.btn-primary {
+  background: var(--red);
+  color: #fff;
+  box-shadow: 0 4px 24px #ff2d5540;
+}
+.btn-primary:hover { background: #ff1a3d; box-shadow: 0 6px 32px #ff2d5560; }
+
+.btn-secondary {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover { border-color: var(--text-dim); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover { color: var(--text); border-color: var(--text-dim); }
+
+.btn-green { background: var(--green); color: #000; box-shadow: 0 4px 24px #30d15840; }
+.btn-green:hover { box-shadow: 0 6px 32px #30d15860; }
+
+.btn-blue { background: var(--blue); color: #fff; box-shadow: 0 4px 24px #007aff40; }
+.btn-blue:hover { box-shadow: 0 6px 32px #007aff60; }
+
+.btn-yellow { background: var(--yellow); color: #000; box-shadow: 0 4px 24px #ffd60a40; }
+
+.btn-sm {
+  padding: 8px 16px;
+  font-size: 13px;
+  max-width: none;
+  width: auto;
+}
+
+/* ---- INPUT ---- */
+.input-group { width: 100%; max-width: 340px; margin-bottom: 12px; }
+.input-group label { display: block; font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 8px; }
+.inp {
+  width: 100%;
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: 'Space Mono', monospace;
+  font-size: 18px;
+  padding: 14px 18px;
+  outline: none;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  text-align: center;
+  transition: border-color .2s;
+}
+.inp:focus { border-color: var(--red); box-shadow: 0 0 0 3px var(--red-dim); }
+.inp::placeholder { color: var(--border); letter-spacing: 2px; text-transform: uppercase; }
+
+.inp-normal {
+  text-transform: none;
+  letter-spacing: 0;
+  text-align: left;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+}
+
+/* ---- CARD ---- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  width: 100%;
+  max-width: 400px;
+  margin-bottom: 12px;
+}
+
+/* ---- BADGE ---- */
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.badge-red { background: var(--red-dim); color: var(--red); border: 1px solid #ff2d5540; }
+.badge-green { background: var(--green-dim); color: var(--green); border: 1px solid #30d15840; }
+.badge-blue { background: var(--blue-dim); color: var(--blue); border: 1px solid #007aff40; }
+.badge-yellow { background: var(--yellow-dim); color: var(--yellow); border: 1px solid #ffd60a40; }
+.badge-purple { background: #bf5af220; color: var(--purple); border: 1px solid #bf5af240; }
+
+/* ---- PLAYER ROW ---- */
+.player-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+  transition: all .2s;
+}
+.player-row.is-host { border-color: var(--yellow); }
+.player-row .avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 14px; flex-shrink: 0;
+}
+.player-row .pname { font-weight: 700; flex: 1; }
+.player-row .actions { display: flex; gap: 6px; }
+
+/* ---- ROOM CODE ---- */
+.room-code-display {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 64px;
+  letter-spacing: 16px;
+  text-align: center;
+  color: var(--text);
+  padding: 20px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface2);
+  cursor: pointer;
+  transition: all .2s;
+  width: 100%; max-width: 340px;
+}
+.room-code-display:hover { border-color: var(--red); }
+
+/* ---- ROLE CARD ---- */
+.role-card {
+  width: 100%; max-width: 340px;
+  border-radius: 20px;
+  padding: 40px 30px;
+  text-align: center;
+  margin: 20px 0;
+}
+.role-card.innocent {
+  background: linear-gradient(135deg, #0a1628, #0d2040);
+  border: 2px solid var(--blue);
+  box-shadow: 0 0 40px #007aff30;
+}
+.role-card.impostor {
+  background: linear-gradient(135deg, #1a0a0a, #2a0808);
+  border: 2px solid var(--red);
+  box-shadow: 0 0 40px #ff2d5530;
+  animation: glow 2s ease-in-out infinite;
+}
+
+.role-icon { font-size: 64px; margin-bottom: 16px; }
+.role-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 42px;
+  letter-spacing: 4px;
+  margin-bottom: 12px;
+}
+.role-word {
+  font-family: 'Space Mono', monospace;
+  font-size: 28px;
+  font-weight: 700;
+  padding: 16px;
+  border-radius: 12px;
+  margin: 16px 0;
+}
+.role-word.innocent-word { background: var(--blue-dim); color: var(--blue); }
+.role-word.impostor-word { background: var(--red-dim); color: var(--text-dim); font-style: italic; }
+
+.hints-list { list-style: none; text-align: left; margin-top: 12px; }
+.hints-list li {
+  padding: 10px 16px; margin-bottom: 6px;
+  background: #ffffff08; border-radius: 8px;
+  border-left: 3px solid var(--red);
+  font-size: 14px; color: var(--text-dim);
+}
+.hints-list li strong { color: var(--text); }
+
+/* ---- VOTE ---- */
+.vote-player {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 18px; border-radius: 12px;
+  background: var(--surface2); border: 2px solid var(--border);
+  cursor: pointer; transition: all .2s; margin-bottom: 10px;
+  width: 100%; max-width: 380px;
+}
+.vote-player.selected { border-color: var(--red); background: var(--red-dim); }
+.vote-player .vote-name { font-weight: 700; flex: 1; }
+.vote-player .vote-count {
+  font-family: 'Space Mono', monospace;
+  font-size: 18px; font-weight: 700; color: var(--red);
+}
+
+/* ---- TIMER ---- */
+.timer-ring {
+  width: 90px; height: 90px;
+  border-radius: 50%;
+  border: 3px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 32px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* ---- STATUS BAR ---- */
+.status-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 14px; border-radius: 8px;
+  background: var(--surface2); border: 1px solid var(--border);
+  font-size: 12px; color: var(--text-dim);
+  margin-bottom: 16px; width: 100%; max-width: 400px;
+}
+.status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink:0; }
+.status-dot.online { background: var(--green); animation: pulse 2s infinite; }
+
+/* ---- REVEAL ---- */
+.reveal-overlay {
+  position: fixed; inset: 0;
+  background: #000000cc; backdrop-filter: blur(10px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 500; flex-direction: column; gap: 20px;
+  padding: 20px;
+}
+.reveal-overlay.hidden { display: none; }
+
+/* ---- NOTIFY TOAST ---- */
+.toast {
+  position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+  background: var(--surface2); border: 1px solid var(--border);
+  padding: 12px 24px; border-radius: 50px;
+  font-size: 14px; font-weight: 600;
+  z-index: 9999; white-space: nowrap;
+  animation: fadeIn .3s ease;
+  max-width: 90vw; text-align: center;
+}
+
+/* ---- DIVIDER ---- */
+.divider {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%; max-width: 340px; margin: 16px 0; color: var(--text-dim); font-size: 12px;
+}
+.divider::before,.divider::after { content:''; flex:1; height:1px; background: var(--border); }
+
+/* ---- SCROLLABLE LIST ---- */
+.scroll-list { width: 100%; max-width: 400px; max-height: 320px; overflow-y: auto; padding-right: 4px; }
+.scroll-list::-webkit-scrollbar { width: 4px; }
+.scroll-list::-webkit-scrollbar-track { background: transparent; }
+.scroll-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ---- PACK SELECTOR ---- */
+.pack-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; max-width: 340px; margin: 12px 0; }
+.pack-btn {
+  padding: 12px; border-radius: 10px;
+  background: var(--surface2); border: 1.5px solid var(--border);
+  color: var(--text); font-size: 13px; font-weight: 700;
+  cursor: pointer; text-align: center; transition: all .2s;
+}
+.pack-btn:hover { border-color: var(--text-dim); }
+.pack-btn.selected { border-color: var(--red); background: var(--red-dim); color: var(--red); }
+.pack-btn .pack-icon { font-size: 22px; display: block; margin-bottom: 4px; }
+
+/* ---- SPINNER ---- */
+.spinner {
+  width: 36px; height: 36px;
+  border: 3px solid var(--border);
+  border-top-color: var(--red);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+  margin: 20px auto;
+}
+
+/* ---- MISC ---- */
+.sep { height: 1px; background: var(--border); width: 100%; max-width: 400px; margin: 12px 0; }
+.text-dim { color: var(--text-dim); }
+.text-sm { font-size: 13px; }
+.text-center { text-align: center; }
+.mt-auto { margin-top: auto; }
+.mb-8 { margin-bottom: 8px; }
+.mb-16 { margin-bottom: 16px; }
+.mb-24 { margin-bottom: 24px; }
+.mt-16 { margin-top: 16px; }
+.mt-24 { margin-top: 24px; }
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-8 { gap: 8px; }
+.gap-12 { gap: 12px; }
+.w-full { width: 100%; }
+.max-w { max-width: 400px; }
+.mono { font-family: 'Space Mono', monospace; }
+.bold { font-weight: 700; }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; max-width: 400px; }
+
+/* Section header */
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; max-width: 400px; margin-bottom: 12px;
+}
+.section-header h3 { font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); }
+
+/* Lobby status pills */
+.lobby-info {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  width: 100%; max-width: 400px; margin-bottom: 16px;
+}
+
+/* Firebase loading */
+#firebase-loading {
+  position: fixed; inset: 0; background: var(--bg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 9000; gap: 16px;
+}
+#firebase-loading.hidden { display: none; }
+
+/* Ready check */
+.ready-indicator { 
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--border); flex-shrink: 0;
+  transition: background .3s;
+}
+.ready-indicator.ready { background: var(--green); box-shadow: 0 0 8px var(--green); }
+
+/* Pack label */
+.pack-label {
+  font-size: 11px; letter-spacing: 1px; font-weight: 700;
+  text-transform: uppercase; color: var(--text-dim);
+  text-align: center; margin-bottom: 6px;
+}
+
+/* Countdown */
+.countdown-number {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 120px; line-height: 1;
+  animation: countIn .5s ease;
+}
+
+/* Word blur reveal */
+.blur-word { filter: blur(8px); transition: filter .6s; cursor: pointer; user-select: none; }
+.blur-word.revealed { filter: blur(0); }
+
+/* Mode chips */
+.mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; max-width: 340px; margin: 10px 0; }
+.mode-chip {
+  padding: 12px; border-radius: 10px;
+  background: var(--surface2); border: 1.5px solid var(--border);
+  cursor: pointer; text-align: center; transition: all .2s;
+}
+.mode-chip .mode-icon { font-size: 20px; }
+.mode-chip .mode-name { font-size: 12px; font-weight: 700; margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+.mode-chip .mode-desc { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+.mode-chip.selected { border-color: var(--red); background: var(--red-dim); }
+
+/* results */
+.result-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; border-radius: 10px;
+  background: var(--surface2); border: 1px solid var(--border);
+  margin-bottom: 8px; width: 100%; max-width: 380px;
+}
+.result-row.winner { border-color: var(--green); background: var(--green-dim); }
+.result-row.loser { border-color: var(--red); background: var(--red-dim); }
+</style>
+</head>
+<body>
+
+<!-- Firebase Loading -->
+<div id="firebase-loading">
+  <div class="logo">L'IMPOSTORE</div>
+  <div class="spinner"></div>
+  <div class="text-dim text-sm">Connessione in corso…</div>
+</div>
+
+<!-- REVEAL OVERLAY -->
+<div class="reveal-overlay hidden" id="reveal-overlay">
+  <div id="reveal-content" style="width:100%;max-width:360px;text-align:center;"></div>
+  <button class="btn btn-ghost btn-sm" onclick="hideReveal()" style="max-width:200px">✕ Chiudi</button>
+</div>
+
+<!-- ==================== SCREEN: HOME ==================== -->
+<div class="screen active" id="screen-home">
+  <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0; padding-top:60px">
+    <div class="logo">L'IMPOSTORE</div>
+    <div class="logo-sub">PARTY GAME • MULTIPLAYER</div>
+    <div style="margin-top:48px; display:flex; flex-direction:column; align-items:center; gap:12px; width:100%">
+      <button class="btn btn-primary" onclick="showScreen('screen-create')">➕ Crea Stanza</button>
+      <button class="btn btn-secondary" onclick="showScreen('screen-join')">🚪 Entra in Stanza</button>
+    </div>
+  </div>
+  <div class="text-dim text-sm text-center" style="padding-bottom:24px; opacity:.4">
+    <div class="mono">Niente server. Tutto real-time via Firebase.</div>
+  </div>
+</div>
+
+<!-- ==================== SCREEN: CREATE ==================== -->
+<div class="screen" id="screen-create">
+  <div style="width:100%; max-width:400px; padding-top:40px;">
+    <button class="btn btn-ghost btn-sm" style="max-width:100px; margin-bottom:24px" onclick="showScreen('screen-home')">← Indietro</button>
+    <h2 style="margin-bottom:6px">Crea Stanza</h2>
+    <p class="text-dim text-sm mb-24">Sei il <strong style="color:var(--yellow)">HOST</strong> — controlli tutto.</p>
+
+    <div class="input-group">
+      <label>Il tuo nome</label>
+      <input class="inp inp-normal" id="create-name" placeholder="Nome giocatore" maxlength="20" autocomplete="off">
+    </div>
+
+    <div class="sep"></div>
+    <p class="pack-label" style="text-align:left; margin-bottom:10px">Scegli il Pack di Parole</p>
+    <div class="pack-grid" id="pack-select">
+      <div class="pack-btn selected" data-pack="generale" onclick="selectPack(this)"><span class="pack-icon">🌍</span>Generale</div>
+      <div class="pack-btn" data-pack="anime" onclick="selectPack(this)"><span class="pack-icon">⛩️</span>Anime</div>
+      <div class="pack-btn" data-pack="film" onclick="selectPack(this)"><span class="pack-icon">🎬</span>Film & Serie</div>
+      <div class="pack-btn" data-pack="sport" onclick="selectPack(this)"><span class="pack-icon">⚽</span>Sport</div>
+      <div class="pack-btn" data-pack="minecraft" onclick="selectPack(this)"><span class="pack-icon">⛏️</span>Minecraft</div>
+      <div class="pack-btn" data-pack="cibo" onclick="selectPack(this)"><span class="pack-icon">🍕</span>Cibo</div>
+    </div>
+
+    <div class="sep"></div>
+    <p class="pack-label" style="text-align:left; margin-bottom:10px">Modalità di Gioco</p>
+    <div class="mode-grid" id="mode-select">
+      <div class="mode-chip selected" data-mode="normale" onclick="selectMode(this)">
+        <div class="mode-icon">🕵️</div>
+        <div class="mode-name">Normale</div>
+        <div class="mode-desc">1 impostore</div>
+      </div>
+      <div class="mode-chip" data-mode="doppio" onclick="selectMode(this)">
+        <div class="mode-icon">👥</div>
+        <div class="mode-name">Doppio</div>
+        <div class="mode-desc">2 impostori</div>
+      </div>
+      <div class="mode-chip" data-mode="mrwhite" onclick="selectMode(this)">
+        <div class="mode-icon">❓</div>
+        <div class="mode-name">Mr. White</div>
+        <div class="mode-desc">Nessuna parola</div>
+      </div>
+      <div class="mode-chip" data-mode="passatelefono" onclick="selectMode(this)">
+        <div class="mode-icon">📱</div>
+        <div class="mode-name">Passa Tel.</div>
+        <div class="mode-desc">Un dispositivo</div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" style="margin-top:20px" onclick="createRoom()">🔥 Crea Stanza</button>
+  </div>
+</div>
+
+<!-- ==================== SCREEN: JOIN ==================== -->
+<div class="screen" id="screen-join">
+  <div style="width:100%; max-width:400px; padding-top:40px;">
+    <button class="btn btn-ghost btn-sm" style="max-width:100px; margin-bottom:24px" onclick="showScreen('screen-home')">← Indietro</button>
+    <h2 style="margin-bottom:6px">Entra in Stanza</h2>
+    <p class="text-dim text-sm mb-24">Inserisci il codice della stanza e il tuo nome.</p>
+    <div class="input-group">
+      <label>Codice Stanza (3 lettere)</label>
+      <input class="inp" id="join-code" placeholder="ABC" maxlength="3" autocomplete="off" oninput="this.value=this.value.toUpperCase()">
+    </div>
+    <div class="input-group">
+      <label>Il tuo nome</label>
+      <input class="inp inp-normal" id="join-name" placeholder="Nome giocatore" maxlength="20" autocomplete="off">
+    </div>
+    <button class="btn btn-primary" style="margin-top:8px" onclick="joinRoom()">🚪 Entra</button>
+  </div>
+</div>
+
+<!-- ==================== SCREEN: LOBBY ==================== -->
+<div class="screen" id="screen-lobby">
+  <div style="width:100%; max-width:400px; padding-top:30px; display:flex; flex-direction:column; align-items:center;">
+
+    <div class="status-bar">
+      <div class="status-dot online"></div>
+      <span>Connesso come <strong id="lobby-my-name">—</strong></span>
+      <span style="margin-left:auto" id="lobby-role-badge"></span>
+    </div>
+
+    <p class="text-dim text-sm mb-8" style="text-align:center">Codice stanza — tap per copiare</p>
+    <div class="room-code-display" id="lobby-code" onclick="copyCode()">—</div>
+
+    <div class="lobby-info" style="margin-top:12px; justify-content:center;">
+      <span class="badge badge-blue" id="lobby-pack-badge">Pack: —</span>
+      <span class="badge badge-purple" id="lobby-mode-badge">Modalità: —</span>
+      <span class="badge badge-green" id="lobby-player-count">0 giocatori</span>
+    </div>
+
+    <!-- HOST PANEL -->
+    <div id="host-panel" style="display:none; width:100%;">
+      <div class="sep"></div>
+      <div class="section-header"><h3>🎮 Controlli Host</h3></div>
+      <div class="grid-2">
+        <button class="btn btn-green btn-sm" onclick="startGame()">▶ Start</button>
+        <button class="btn btn-secondary btn-sm" onclick="regenerateWord()">🔄 Nuova Parola</button>
+        <button class="btn btn-yellow btn-sm" onclick="stopGame()">⏹ Stop</button>
+        <button class="btn btn-blue btn-sm" onclick="newRound()">🔃 Nuova Partita</button>
+      </div>
+    </div>
+
+    <div class="sep"></div>
+    <div class="section-header">
+      <h3>👥 Giocatori</h3>
+      <span class="badge badge-green" id="ready-count">0 pronti</span>
+    </div>
+
+    <div class="scroll-list" id="players-list"></div>
+
+    <!-- PLAYER CONTROLS (non-host) -->
+    <div id="player-panel" style="display:none; width:100%; max-width:400px;">
+      <div class="sep"></div>
+      <div class="input-group" style="max-width:100%">
+        <label>Cambia nome</label>
+        <div style="display:flex; gap:8px">
+          <input class="inp inp-normal" id="change-name-inp" placeholder="Nuovo nome" maxlength="20" style="flex:1; text-align:left; letter-spacing:0; font-size:15px">
+          <button class="btn btn-secondary btn-sm" onclick="changeName()" style="max-width:80px; flex-shrink:0">OK</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:16px"></div>
+    <button class="btn btn-ghost btn-sm" style="max-width:160px; margin-bottom:20px" onclick="toggleReady()" id="ready-btn">✓ Sono Pronto</button>
+    <button class="btn btn-ghost btn-sm" style="max-width:160px; margin-bottom:20px; color:var(--red)" onclick="leaveRoom()">✕ Esci dalla Stanza</button>
+  </div>
+</div>
+
+<!-- ==================== SCREEN: ROLE ==================== -->
+<div class="screen" id="screen-role">
+  <div style="width:100%; max-width:400px; padding-top:30px; display:flex; flex-direction:column; align-items:center; text-align:center;">
+    <p class="text-dim text-sm mb-8">Il tuo ruolo in questa partita</p>
+    <div class="role-card" id="role-card">
+      <div class="role-icon" id="role-icon">🕵️</div>
+      <div class="role-title" id="role-title">—</div>
+      <p class="text-dim text-sm" id="role-desc">—</p>
+      <div id="role-word-container" style="margin-top:16px">
+        <p class="text-dim text-sm mb-8">Tap per rivelare</p>
+        <div class="role-word blur-word" id="role-word" onclick="this.classList.toggle('revealed')">—</div>
+      </div>
+      <ul class="hints-list" id="role-hints" style="display:none"></ul>
+    </div>
+
+    <p class="text-dim text-sm">Ricorda il tuo ruolo, poi vai in</p>
+    <button class="btn btn-primary" style="margin-top:16px" onclick="showScreen('screen-discussion')">🔥 Vai alla Discussione</button>
+
+    <!-- Passa telefono mode -->
+    <div id="pass-phone-btns" style="display:none; margin-top:16px; width:100%">
+      <button class="btn btn-yellow" onclick="passPhoneNext()">📱 Passa al Prossimo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCREEN: DISCUSSION ==================== -->
+<div class="screen" id="screen-discussion">
+  <div style="width:100%; max-width:400px; padding-top:30px; display:flex; flex-direction:column; align-items:center;">
+    <h2 style="margin-bottom:4px">🗣️ Discussione</h2>
+    <p class="text-dim text-sm mb-16">Trovate l'impostore!</p>
+
+    <div class="status-bar">
+      <div class="status-dot online"></div>
+      <span id="disc-status">Partita in corso</span>
+    </div>
+
+    <!-- HOST: timer + controls -->
+    <div id="disc-host-controls" style="display:none; width:100%; max-width:400px;">
+      <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-bottom:12px;">
+        <button class="btn btn-blue btn-sm" onclick="showRevealImpostor()">👁 Rivela Impostore</button>
+        <button class="btn btn-yellow btn-sm" onclick="showScreen('screen-vote')">🗳️ Vai al Voto</button>
+        <button class="btn btn-secondary btn-sm" onclick="stopGame()">⏹ Stop</button>
+      </div>
+    </div>
+
+    <!-- Word reminder for innocents -->
+    <div class="card" id="disc-word-card" style="display:none; text-align:center; margin-bottom:12px;">
+      <p class="text-dim text-sm mb-8">La parola segreta</p>
+      <div style="font-family:'Space Mono',monospace; font-size:26px; font-weight:700; color:var(--blue); cursor:pointer" class="blur-word" id="disc-word" onclick="this.classList.toggle('revealed')">—</div>
+    </div>
+
+    <div class="section-header"><h3>Giocatori in partita</h3></div>
+    <div class="scroll-list" id="disc-players-list"></div>
+
+    <button class="btn btn-ghost btn-sm" style="max-width:180px; margin-top:16px; margin-bottom:24px" onclick="showScreen('screen-vote')">🗳️ Vai al Voto</button>
+  </div>
+</div>
+
+<!-- ==================== SCREEN: VOTE ==================== -->
+<div class="screen" id="screen-vote">
+  <div style="width:100%; max-width:400px; padding-top:30px; display:flex; flex-direction:column; align-items:center;">
+    <h2 style="margin-bottom:4px">🗳️ Votazione</h2>
+    <p class="text-dim text-sm mb-16">Chi è l'impostore? Vota!</p>
+
+    <div id="vote-list" class="scroll-list" style="max-height:none; overflow:visible; width:100%;"></div>
+
+    <div class="sep"></div>
+    <button class="btn btn-primary" onclick="submitVote()" id="vote-submit-btn">✓ Conferma Voto</button>
+
+    <!-- Host reveal results -->
+    <div id="vote-host-btns" style="display:none; margin-top:12px; width:100%">
+      <button class="btn btn-blue" onclick="showVoteResults()">📊 Mostra Risultati</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCREEN: RESULTS ==================== -->
+<div class="screen" id="screen-results">
+  <div style="width:100%; max-width:400px; padding-top:30px; display:flex; flex-direction:column; align-items:center; text-align:center;">
+    <h2 style="margin-bottom:4px" id="results-title">Risultati</h2>
+    <p class="text-dim text-sm mb-24" id="results-subtitle">—</p>
+
+    <div id="results-list" style="width:100%; margin-bottom:16px;"></div>
+
+    <div class="card" style="text-align:center; margin-bottom:20px;">
+      <p class="text-dim text-sm mb-8">L'impostore era</p>
+      <div style="font-size:24px; font-weight:800;" id="results-impostor">—</div>
+      <div style="margin-top:8px;">
+        <p class="text-dim text-sm mb-4">La parola segreta era</p>
+        <div class="mono" style="font-size:20px; color:var(--yellow)" id="results-word">—</div>
+      </div>
+    </div>
+
+    <div id="results-host-btns" style="display:none; width:100%">
+      <button class="btn btn-primary" onclick="newRound()">🔃 Nuova Partita</button>
+      <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="leaveRoom()">🚪 Esci dalla Stanza</button>
+    </div>
+    <div id="results-player-btns" style="display:none; width:100%">
+      <button class="btn btn-secondary" onclick="showScreen('screen-lobby')">← Torna alla Lobby</button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, set, get, onValue, update, remove, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+// ---- FIREBASE CONFIG ----
+// NOTE: Replace with your own Firebase config from console.firebase.google.com
+// Create a new project → Realtime Database → Start in test mode
+const firebaseConfig = {
+  apiKey: "AIzaSyDemo_ReplaceWithYours",
+  authDomain: "impostore-demo.firebaseapp.com",
+  databaseURL: "https://impostore-demo-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "impostore-demo",
+  storageBucket: "impostore-demo.appspot.com",
+  messagingSenderId: "000000000000",
+  appId: "1:000000000000:web:000000000000000000"
+};
+
+// ---- WORD PACKS ----
+const WORD_PACKS = {
+  generale: {
+    words: ["Pizza","Spiaggia","Castello","Treno","Telefono","Foresta","Montagna","Piscina","Cinema","Biblioteca","Aeroporto","Ospedale","Museo","Stadio","Supermercato","Scuola","Palestra","Ristorante","Parco","Banca"],
+    hints: {
+      "Pizza":["Cibo","Rotondo","Italia"], "Spiaggia":["Acqua","Sabbia","Estate"], "Castello":["Medievale","Pietra","Re"],
+      "Treno":["Binari","Veloce","Stazione"], "Telefono":["Comunicazione","Schermo","Tasca"],
+      "Foresta":["Verde","Alberi","Animali"], "Montagna":["Alta","Neve","Escursione"],
+      "Piscina":["Acqua","Nuoto","Azzurra"], "Cinema":["Film","Buio","Popcorn"], "Biblioteca":["Libri","Silenzio","Scaffali"],
+      "Aeroporto":["Volo","Valigia","Runway"], "Ospedale":["Dottore","Bianco","Salute"],
+      "Museo":["Arte","Quadri","Cultura"], "Stadio":["Sport","Folla","Erba"],
+      "Supermercato":["Spesa","Scaffali","Cassa"], "Scuola":["Bambini","Lezioni","Zaino"],
+      "Palestra":["Muscoli","Sudore","Pesi"], "Ristorante":["Cibo","Cameriere","Menu"],
+      "Parco":["Verde","Panchine","Cani"], "Banca":["Soldi","Sportello","Sicuro"]
+    }
+  },
+  anime: {
+    words: ["Naruto","Attacco dei Giganti","Death Note","Dragon Ball","One Piece","Bleach","Jujutsu Kaisen","Demon Slayer","Hunter x Hunter","Fullmetal Alchemist"],
+    hints: {
+      "Naruto":["Ninja","Giallo","Ramen"], "Attacco dei Giganti":["Muri","Giganti","Militare"],
+      "Death Note":["Quaderno","Shinigami","L"], "Dragon Ball":["Sfere","Saiyan","Kame"],
+      "One Piece":["Pirati","Mare","Frutta"], "Bleach":["Shinigami","Spade","Anima"],
+      "Jujutsu Kaisen":["Maledizioni","Occhi","Tokyo"], "Demon Slayer":["Katana","Demoni","Respiro"],
+      "Hunter x Hunter":["Nen","Gon","Formica"], "Fullmetal Alchemist":["Alchimia","Metallo","Fratelli"]
+    }
+  },
+  film: {
+    words: ["Titanic","Interstellar","Il Padrino","Matrix","Avatar","Joker","Inception","Avengers","Il Re Leone","Forrest Gump"],
+    hints: {
+      "Titanic":["Nave","Mare","Amore"], "Interstellar":["Spazio","Buco nero","Fisica"],
+      "Il Padrino":["Mafia","Sicilia","Famiglia"], "Matrix":["Hacker","Pillola","Realtà"],
+      "Avatar":["Blu","Pianeta","Foresta"], "Joker":["Pagliaccio","Viola","Gotham"],
+      "Inception":["Sogni","Spinning Top","Strati"], "Avengers":["Eroi","Marvel","Guanto"],
+      "Il Re Leone":["Africa","Leone","Orgoglio"], "Forrest Gump":["Cioccolatini","Corsa","Alabama"]
+    }
+  },
+  sport: {
+    words: ["Calcio","Basket","Tennis","Nuoto","Ciclismo","Boxe","Pallavolo","Golf","Rugby","Formula 1"],
+    hints: {
+      "Calcio":["Pallone","Rete","11 giocatori"], "Basket":["Canestro","Palla arancione","5 giocatori"],
+      "Tennis":["Racchetta","Rete","Ace"], "Nuoto":["Corsie","Vasca","Stile"],
+      "Ciclismo":["Bici","Salite","Giro"], "Boxe":["Ring","Guantoni","Round"],
+      "Pallavolo":["Rete","Schiacciata","Battuta"], "Golf":["Buca","Mazza","Fairway"],
+      "Rugby":["Mischia","Ovale","Meta"], "Formula 1":["Motore","Pit stop","GP"]
+    }
+  },
+  minecraft: {
+    words: ["Creeper","Enderman","Diamante","Nether","Villaggio","Bastone","Forno","Petto d'armatura","Dragon dell'End","Scudo"],
+    hints: {
+      "Creeper":["Verde","Esplode","Silenzioso"], "Enderman":["Alto","Nero","Teletrasporto"],
+      "Diamante":["Blu","Raro","Profondo"], "Nether":["Fuoco","Rosso","Portale"],
+      "Villaggio":["Villager","Case","Commercio"], "Bastone":["Legno","Torce","Attrezzi"],
+      "Forno":["Cucinare","Carbone","Pietra"], "Petto d'armatura":["Protezione","Metallo","Corpo"],
+      "Dragon dell'End":["Boss","Cristalli","Fine"], "Scudo":["Difesa","Braccio","Blocca"]
+    }
+  },
+  cibo: {
+    words: ["Sushi","Hamburger","Lasagne","Tiramisù","Ramen","Tacos","Paella","Curry","Croissant","Gelato"],
+    hints: {
+      "Sushi":["Giappone","Riso","Mare"], "Hamburger":["Carne","Pane","America"],
+      "Lasagne":["Pasta","Forno","Ragù"], "Tiramisù":["Caffè","Mascarpone","Italia"],
+      "Ramen":["Brodo","Noodle","Giappone"], "Tacos":["Messico","Mais","Piccante"],
+      "Paella":["Riso","Spagna","Frutti di mare"], "Curry":["India","Spezie","Giallo"],
+      "Croissant":["Francia","Burro","Mattina"], "Gelato":["Freddo","Cono","Dolce"]
+    }
+  }
+};
+
+// ---- STATE ----
+let db, roomRef, roomListener;
+let myId = 'p_' + Math.random().toString(36).slice(2, 9);
+let myName = '';
+let myRoom = null;
+let amHost = false;
+let currentPack = 'generale';
+let currentMode = 'normale';
+let localRoomData = null;
+let selectedVote = null;
+let passPhoneIndex = 0;
+let pendingToast = null;
+
+// ---- INIT ----
+async function init() {
+  // Demo mode: use localStorage simulation if no real Firebase
+  try {
+    const app = initializeApp(firebaseConfig);
+    db = getDatabase(app);
+    // Test connection
+    const testRef = ref(db, '.info/connected');
+    await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error('timeout')), 5000);
+      onValue(testRef, (snap) => {
+        clearTimeout(timeout);
+        resolve();
+      }, { onlyOnce: true });
+    });
+    document.getElementById('firebase-loading').classList.add('hidden');
+    window._dbReady = true;
+    window._db = db;
+    window._ref = ref;
+    window._set = set;
+    window._get = get;
+    window._onValue = onValue;
+    window._update = update;
+    window._remove = remove;
+  } catch(e) {
+    console.warn('Firebase not configured, using demo mode (localStorage)', e);
+    document.getElementById('firebase-loading').classList.add('hidden');
+    initDemoMode();
+  }
+}
+
+// ---- DEMO MODE (localStorage fallback for testing) ----
+function initDemoMode() {
+  window._dbReady = false;
+  showToast('ℹ️ Modalità demo — configura Firebase per il multiplayer reale', 4000);
+}
+
+// Expose to global
+window._myId = myId;
+window._getMyId = () => myId;
+window._getMyName = () => myName;
+window._setMyName = (n) => { myName = n; };
+window._getRoomData = () => localRoomData;
+window._setRoomData = (d) => { localRoomData = d; };
+window._getMyRoom = () => myRoom;
+window._setMyRoom = (r) => { myRoom = r; };
+window._getAmHost = () => amHost;
+window._setAmHost = (h) => { amHost = h; };
+window._getCurrentPack = () => currentPack;
+window._getCurrentMode = () => currentMode;
+window._getSelectedVote = () => selectedVote;
+window._setSelectedVote = (v) => { selectedVote = v; };
+window._getPassPhoneIndex = () => passPhoneIndex;
+window._setPassPhoneIndex = (i) => { passPhoneIndex = i; };
+window._WORD_PACKS = WORD_PACKS;
+window._roomRef = () => roomRef;
+window._cleanupListener = () => {
+  if(roomListener && roomRef) {
+    try { roomRef.off?.(); } catch(e){}
+  }
+};
+
+// Room listener
+window._listenRoom = function(code, callback) {
+  if(!window._dbReady) {
+    // Demo: poll localStorage
+    const poll = () => {
+      const d = JSON.parse(localStorage.getItem('room_' + code) || 'null');
+      if(d) { localRoomData = d; callback(d); }
+    };
+    poll();
+    const iv = setInterval(poll, 1000);
+    window._demoInterval = iv;
+    return;
+  }
+  const rRef = ref(db, 'rooms/' + code);
+  roomRef = rRef;
+  roomListener = onValue(rRef, snap => {
+    const d = snap.val();
+    localRoomData = d;
+    callback(d);
+  });
+};
+
+window._saveRoom = async function(code, data) {
+  if(!window._dbReady) {
+    localStorage.setItem('room_' + code, JSON.stringify(data));
+    return;
+  }
+  await set(ref(db, 'rooms/' + code), data);
+};
+
+window._updateRoom = async function(code, updates) {
+  if(!window._dbReady) {
+    const d = JSON.parse(localStorage.getItem('room_' + code) || '{}');
+    Object.assign(d, updates);
+    localStorage.setItem('room_' + code, JSON.stringify(d));
+    return;
+  }
+  await update(ref(db, 'rooms/' + code), updates);
+};
+
+window._removeRoom = async function(code) {
+  if(!window._dbReady) {
+    localStorage.removeItem('room_' + code);
+    return;
+  }
+  await remove(ref(db, 'rooms/' + code));
+};
+
+window._getRoom = async function(code) {
+  if(!window._dbReady) {
+    return JSON.parse(localStorage.getItem('room_' + code) || 'null');
+  }
+  const snap = await get(ref(db, 'rooms/' + code));
+  return snap.val();
+};
+
+init();
+</script>
+
+<script>
+// ==================== UTILITIES ====================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showToast(msg, dur=2500) {
+  const existing = document.querySelector('.toast');
+  if(existing) existing.remove();
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), dur);
+}
+
+function generateCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  return Array.from({length:3}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
+}
+
+function randomColor() {
+  const colors = ['#ff2d55','#007aff','#30d158','#ffd60a','#bf5af2','#ff9f0a','#5ac8fa','#ff375f'];
+  return colors[Math.floor(Math.random()*colors.length)];
+}
+
+function getWordAndHints(pack, mode) {
+  const p = window._WORD_PACKS[pack];
+  const word = p.words[Math.floor(Math.random()*p.words.length)];
+  let hints = p.hints[word] || ['Categoria 1','Categoria 2','Categoria 3'];
+  if(mode === 'mrwhite') hints = ['???','???','???'];
+  return { word, hints };
+}
+
+function selectPack(el) {
+  document.querySelectorAll('.pack-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  window._currentPackLocal = el.dataset.pack;
+}
+
+function selectMode(el) {
+  document.querySelectorAll('.mode-chip').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  window._currentModeLocal = el.dataset.mode;
+}
+
+// ==================== CREATE ROOM ====================
+async function createRoom() {
+  const name = document.getElementById('create-name').value.trim();
+  if(!name) { showToast('⚠️ Inserisci il tuo nome!'); return; }
+
+  const pack = window._currentPackLocal || 'generale';
+  const mode = window._currentModeLocal || 'normale';
+  const code = generateCode();
+  const color = randomColor();
+
+  const roomData = {
+    code,
+    host: window._myId,
+    status: 'lobby',
+    pack,
+    mode,
+    word: '',
+    hints: [],
+    players: {
+      [window._myId]: { name, color, ready: false, voted: '', isImpostor: false, id: window._myId }
+    },
+    votes: {},
+    impostors: [],
+    createdAt: Date.now()
+  };
+
+  await window._saveRoom(code, roomData);
+  window._setMyRoom(code);
+  window._setMyName(name);
+  window._setAmHost(true);
+  listenToRoom(code);
+  showScreen('screen-lobby');
+  showToast('✅ Stanza ' + code + ' creata!');
+}
+
+// ==================== JOIN ROOM ====================
+async function joinRoom() {
+  const code = document.getElementById('join-code').value.trim().toUpperCase();
+  const name = document.getElementById('join-name').value.trim();
+  if(!code || code.length !== 3) { showToast('⚠️ Inserisci un codice valido!'); return; }
+  if(!name) { showToast('⚠️ Inserisci il tuo nome!'); return; }
+
+  const existing = await window._getRoom(code);
+  if(!existing) { showToast('❌ Stanza non trovata!'); return; }
+  if(existing.status === 'playing' && existing.mode !== 'passatelefono') {
+    showToast('🔒 Partita già in corso!'); return;
+  }
+
+  // Check duplicate name
+  const players = Object.values(existing.players || {});
+  const dupName = players.find(p => p.name.toLowerCase() === name.toLowerCase());
+  if(dupName) { showToast('⚠️ Nome già in uso! Scegline un altro.'); return; }
+
+  const color = randomColor();
+  await window._updateRoom(code, {
+    [`players/${window._myId}`]: { name, color, ready: false, voted: '', isImpostor: false, id: window._myId }
+  });
+
+  window._setMyRoom(code);
+  window._setMyName(name);
+  window._setAmHost(false);
+  listenToRoom(code);
+  showScreen('screen-lobby');
+  showToast('✅ Entrato nella stanza ' + code);
+}
+
+// ==================== LISTEN TO ROOM ====================
+let lastStatus = null;
+function listenToRoom(code) {
+  window._listenRoom(code, (data) => {
+    if(!data) {
+      showToast('⚠️ Stanza non trovata o eliminata.');
+      showScreen('screen-home');
+      return;
+    }
+    window._setRoomData(data);
+    renderLobby(data);
+
+    // Auto-navigate on status changes
+    if(data.status !== lastStatus) {
+      if(data.status === 'playing' && lastStatus === 'lobby') {
+        lastStatus = data.status;
+        showRoleScreen(data);
+      } else if(data.status === 'discussion') {
+        lastStatus = data.status;
+        showScreen('screen-discussion');
+        renderDiscussion(data);
+      } else if(data.status === 'voting') {
+        lastStatus = data.status;
+        showScreen('screen-vote');
+        renderVote(data);
+      } else if(data.status === 'results') {
+        lastStatus = data.status;
+        showScreen('screen-results');
+        renderResults(data);
+      } else if(data.status === 'lobby') {
+        lastStatus = data.status;
+      }
+    }
+
+    // Always re-render current screen
+    const cur = document.querySelector('.screen.active')?.id;
+    if(cur === 'screen-discussion') renderDiscussion(data);
+    if(cur === 'screen-vote') renderVote(data);
+    if(cur === 'screen-results') renderResults(data);
+  });
+}
+
+// ==================== RENDER LOBBY ====================
+function renderLobby(data) {
+  if(!data) return;
+  document.getElementById('lobby-code').textContent = data.code || '---';
+  document.getElementById('lobby-pack-badge').textContent = 'Pack: ' + (data.pack || '—');
+  document.getElementById('lobby-mode-badge').textContent = 'Modalità: ' + (data.mode || '—');
+  const players = Object.values(data.players || {});
+  document.getElementById('lobby-player-count').textContent = players.length + ' giocatori';
+
+  // My name
+  const me = data.players?.[window._myId];
+  if(me) {
+    document.getElementById('lobby-my-name').textContent = me.name;
+    window._setMyName(me.name);
+  }
+
+  const amH = data.host === window._myId;
+  window._setAmHost(amH);
+  document.getElementById('host-panel').style.display = amH ? 'block' : 'none';
+  document.getElementById('player-panel').style.display = amH ? 'none' : 'block';
+
+  if(me?.ready) {
+    document.getElementById('ready-btn').textContent = '✓ Pronto!';
+    document.getElementById('ready-btn').style.color = 'var(--green)';
+  } else {
+    document.getElementById('ready-btn').textContent = '✓ Sono Pronto';
+    document.getElementById('ready-btn').style.color = '';
+  }
+
+  const readyCount = players.filter(p => p.ready).length;
+  document.getElementById('ready-count').textContent = readyCount + ' pronti';
+
+  // Players list
+  const list = document.getElementById('players-list');
+  list.innerHTML = '';
+  players.forEach(p => {
+    const isMe = p.id === window._myId;
+    const isH = p.id === data.host;
+    const row = document.createElement('div');
+    row.className = 'player-row' + (isH ? ' is-host' : '');
+    row.innerHTML = `
+      <div class="avatar" style="background:${p.color}20; color:${p.color}">${p.name.charAt(0).toUpperCase()}</div>
+      <div class="pname">${p.name} ${isMe ? '<span class="badge badge-blue">TU</span>' : ''} ${isH ? '<span class="badge badge-yellow">HOST</span>' : ''}</div>
+      <div class="ready-indicator ${p.ready ? 'ready' : ''}"></div>
+      <div class="actions"></div>
+    `;
+    const actions = row.querySelector('.actions');
+
+    // Host controls per player
+    if(amH && !isMe) {
+      const kickBtn = document.createElement('button');
+      kickBtn.className = 'btn btn-ghost btn-sm';
+      kickBtn.style.cssText = 'color:var(--red);max-width:none;padding:6px 10px';
+      kickBtn.textContent = '✕';
+      kickBtn.title = 'Kick';
+      kickBtn.onclick = () => kickPlayer(p.id, data.code);
+
+      const forceBtn = document.createElement('button');
+      forceBtn.className = 'btn btn-ghost btn-sm';
+      forceBtn.style.cssText = 'color:var(--purple);max-width:none;padding:6px 8px;font-size:11px';
+      forceBtn.textContent = '👁';
+      forceBtn.title = 'Forza Impostore';
+      forceBtn.onclick = () => forceImpostor(p.id, data);
+
+      actions.appendChild(forceBtn);
+      actions.appendChild(kickBtn);
+    }
+
+    list.appendChild(row);
+  });
+}
+
+// ==================== HOST CONTROLS ====================
+async function startGame() {
+  const data = window._getRoomData();
+  if(!data) return;
+  const code = window._getMyRoom();
+  const players = Object.values(data.players || {});
+  if(players.length < 2) { showToast('⚠️ Servono almeno 2 giocatori!'); return; }
+
+  const { word, hints } = getWordAndHints(data.pack || 'generale', data.mode || 'normale');
+  const mode = data.mode || 'normale';
+
+  // Assign impostors
+  let impostorIds = [];
+  if(mode === 'doppio' && players.length >= 4) {
+    const shuffled = [...players].sort(() => Math.random()-.5);
+    impostorIds = [shuffled[0].id, shuffled[1].id];
+  } else {
+    impostorIds = [players[Math.floor(Math.random()*players.length)].id];
+  }
+
+  // Update players
+  const playerUpdates = {};
+  players.forEach(p => {
+    playerUpdates[`players/${p.id}/isImpostor`] = impostorIds.includes(p.id);
+    playerUpdates[`players/${p.id}/voted`] = '';
+  });
+
+  await window._updateRoom(code, {
+    ...playerUpdates,
+    word, hints,
+    impostors: impostorIds,
+    status: 'playing',
+    votes: {}
+  });
+}
+
+async function stopGame() {
+  const code = window._getMyRoom();
+  await window._updateRoom(code, { status: 'lobby' });
+  showToast('⏹ Partita fermata');
+}
+
+async function newRound() {
+  const code = window._getMyRoom();
+  const data = window._getRoomData();
+  if(!data) return;
+  const players = Object.values(data.players || {});
+  const playerUpdates = {};
+  players.forEach(p => {
+    playerUpdates[`players/${p.id}/isImpostor`] = false;
+    playerUpdates[`players/${p.id}/ready`] = false;
+    playerUpdates[`players/${p.id}/voted`] = '';
+  });
+  await window._updateRoom(code, { ...playerUpdates, status: 'lobby', word: '', hints: [], votes: {}, impostors: [] });
+  showToast('🔃 Nuova partita!');
+}
+
+async function regenerateWord() {
+  const code = window._getMyRoom();
+  const data = window._getRoomData();
+  if(!data) return;
+  const { word, hints } = getWordAndHints(data.pack || 'generale', data.mode || 'normale');
+  await window._updateRoom(code, { word, hints });
+  showToast('🔄 Parola rigenerata: ' + word);
+}
+
+async function kickPlayer(pid, code) {
+  const data = window._getRoomData();
+  if(!data) return;
+  // Remove player
+  const players = {...data.players};
+  delete players[pid];
+  await window._updateRoom(code, { [`players/${pid}`]: null });
+  showToast('✕ Giocatore rimosso');
+}
+
+async function forceImpostor(pid, data) {
+  const code = window._getMyRoom();
+  const players = Object.values(data.players || {});
+  const playerUpdates = {};
+  players.forEach(p => {
+    playerUpdates[`players/${p.id}/isImpostor`] = p.id === pid;
+  });
+  await window._updateRoom(code, { ...playerUpdates, impostors: [pid] });
+  showToast('👁 Impostore forzato!');
+}
+
+// ==================== PLAYER CONTROLS ====================
+async function toggleReady() {
+  const code = window._getMyRoom();
+  const data = window._getRoomData();
+  if(!data) return;
+  const me = data.players?.[window._myId];
+  if(!me) return;
+  await window._updateRoom(code, { [`players/${window._myId}/ready`]: !me.ready });
+}
+
+async function changeName() {
+  const newName = document.getElementById('change-name-inp').value.trim();
+  if(!newName) { showToast('⚠️ Nome non valido'); return; }
+  const code = window._getMyRoom();
+  const data = window._getRoomData();
+  const players = Object.values(data.players || {});
+  const dup = players.find(p => p.id !== window._myId && p.name.toLowerCase() === newName.toLowerCase());
+  if(dup) { showToast('⚠️ Nome già in uso!'); return; }
+  await window._updateRoom(code, { [`players/${window._myId}/name`]: newName });
+  window._setMyName(newName);
+  document.getElementById('change-name-inp').value = '';
+  showToast('✅ Nome cambiato in ' + newName);
+}
+
+function copyCode() {
+  const code = window._getMyRoom();
+  if(!code) return;
+  navigator.clipboard?.writeText(code).catch(() => {});
+  showToast('📋 Codice ' + code + ' copiato!');
+}
+
+async function leaveRoom() {
+  const code = window._getMyRoom();
+  if(!code) { showScreen('screen-home'); return; }
+  if(window._demoInterval) clearInterval(window._demoInterval);
+
+  const data = window._getRoomData();
+  const amH = window._getAmHost();
+
+  if(amH) {
+    // Transfer host or delete room
+    const players = Object.values(data?.players || {}).filter(p => p.id !== window._myId);
+    if(players.length > 0) {
+      await window._updateRoom(code, {
+        host: players[0].id,
+        [`players/${window._myId}`]: null
+      });
+    } else {
+      await window._removeRoom(code);
+    }
+  } else {
+    await window._updateRoom(code, { [`players/${window._myId}`]: null });
+  }
+  window._setMyRoom(null);
+  window._setAmHost(false);
+  showScreen('screen-home');
+}
+
+// ==================== ROLE SCREEN ====================
+function showRoleScreen(data) {
+  const me = data.players?.[window._myId];
+  if(!me) return;
+  const isImpostor = me.isImpostor;
+  const mode = data.mode || 'normale';
+
+  const card = document.getElementById('role-card');
+  card.className = 'role-card ' + (isImpostor ? 'impostor' : 'innocent');
+  document.getElementById('role-icon').textContent = isImpostor ? '🕵️' : '😇';
+  document.getElementById('role-title').textContent = isImpostor ? 'IMPOSTORE' : 'INNOCENTE';
+  document.getElementById('role-desc').textContent = isImpostor
+    ? (mode === 'mrwhite' ? 'Non conosci la parola. Bluffa!' : 'Conosci solo suggerimenti. Bluffa!')
+    : 'Conosci la parola segreta. Trova l\'impostore!';
+
+  const wordEl = document.getElementById('role-word');
+  const hintsList = document.getElementById('role-hints');
+  const wordContainer = document.getElementById('role-word-container');
+
+  if(isImpostor) {
+    wordContainer.style.display = 'none';
+    hintsList.style.display = 'block';
+    hintsList.innerHTML = '';
+    if(mode === 'mrwhite') {
+      const li = document.createElement('li');
+      li.innerHTML = '<strong>Mr. White</strong> — Non hai alcuna parola. Inventa!';
+      hintsList.appendChild(li);
+    } else {
+      (data.hints || []).forEach(h => {
+        const li = document.createElement('li');
+        li.innerHTML = `<strong>${h}</strong>`;
+        hintsList.appendChild(li);
+      });
+    }
+  } else {
+    wordContainer.style.display = 'block';
+    hintsList.style.display = 'none';
+    wordEl.textContent = data.word || '???';
+    wordEl.className = 'role-word blur-word innocent-word';
+  }
+
+  // Pass phone mode
+  document.getElementById('pass-phone-btns').style.display = mode === 'passatelefono' ? 'block' : 'none';
+  document.querySelector('[onclick="showScreen(\'screen-discussion\')"]').style.display = mode === 'passatelefono' ? 'none' : 'block';
+
+  if(mode === 'passatelefono') {
+    window._setPassPhoneIndex(0);
+    showPassPhoneFor(data, 0);
+  }
+
+  showScreen('screen-role');
+  // Navigate to discussion after delay (non-passatelefono)
+  if(mode !== 'passatelefono') {
+    // Will navigate manually
+  }
+}
+
+function showPassPhoneFor(data, idx) {
+  const players = Object.values(data.players || {});
+  if(idx >= players.length) {
+    // All done, go to discussion
+    showScreen('screen-discussion');
+    return;
+  }
+  const p = players[idx];
+  const isImpostor = p.isImpostor;
+  const card = document.getElementById('role-card');
+  card.className = 'role-card ' + (isImpostor ? 'impostor' : 'innocent');
+  document.getElementById('role-icon').textContent = isImpostor ? '🕵️' : '😇';
+  document.getElementById('role-title').textContent = isImpostor ? 'IMPOSTORE' : 'INNOCENTE';
+  document.getElementById('role-desc').textContent = '📱 ' + p.name + ' — solo tu leggi!';
+  const wordEl = document.getElementById('role-word');
+  const hintsList = document.getElementById('role-hints');
+  const wordContainer = document.getElementById('role-word-container');
+  if(isImpostor) {
+    wordContainer.style.display = 'none';
+    hintsList.style.display = 'block';
+    hintsList.innerHTML = (data.hints || []).map(h => `<li><strong>${h}</strong></li>`).join('');
+  } else {
+    wordContainer.style.display = 'block';
+    hintsList.style.display = 'none';
+    wordEl.textContent = data.word || '???';
+    wordEl.className = 'role-word blur-word innocent-word';
+  }
+  document.getElementById('pass-phone-btns').innerHTML = `<button class="btn btn-yellow" onclick="passPhoneNext()">📱 Passa al Prossimo (${idx+1}/${Object.values(data.players||{}).length})</button>`;
+}
+
+function passPhoneNext() {
+  const data = window._getRoomData();
+  const players = Object.values(data?.players || {});
+  const idx = window._getPassPhoneIndex() + 1;
+  window._setPassPhoneIndex(idx);
+  if(idx >= players.length) {
+    showScreen('screen-discussion');
+  } else {
+    showPassPhoneFor(data, idx);
+  }
+}
+
+// ==================== DISCUSSION ====================
+function renderDiscussion(data) {
+  if(!data) return;
+  const amH = data.host === window._myId;
+  document.getElementById('disc-host-controls').style.display = amH ? 'block' : 'none';
+
+  const me = data.players?.[window._myId];
+  const discWordCard = document.getElementById('disc-word-card');
+  if(me && !me.isImpostor) {
+    discWordCard.style.display = 'block';
+    document.getElementById('disc-word').textContent = data.word || '???';
+  }
+
+  const list = document.getElementById('disc-players-list');
+  list.innerHTML = '';
+  Object.values(data.players || {}).forEach(p => {
+    const row = document.createElement('div');
+    row.className = 'player-row';
+    row.innerHTML = `
+      <div class="avatar" style="background:${p.color}20;color:${p.color}">${p.name.charAt(0).toUpperCase()}</div>
+      <div class="pname">${p.name}</div>
+      ${p.id === data.host ? '<span class="badge badge-yellow">HOST</span>' : ''}
+    `;
+    list.appendChild(row);
+  });
+}
+
+async function showRevealImpostor() {
+  const data = window._getRoomData();
+  const impostors = data?.impostors || [];
+  const players = data?.players || {};
+  const names = impostors.map(id => players[id]?.name || 'Sconosciuto').join(', ');
+  showReveal(`<div class="role-icon">🕵️</div><div class="role-title" style="color:var(--red);font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:3px">L'IMPOSTORE ERA</div><div style="font-size:28px;font-weight:800;margin-top:12px">${names}</div>`);
+}
+
+// ==================== VOTE ====================
+function renderVote(data) {
+  const list = document.getElementById('vote-list');
+  list.innerHTML = '';
+  const me = window._myId;
+  const players = Object.values(data.players || {}).filter(p => p.id !== me);
+
+  // Count votes
+  const voteCounts = {};
+  Object.values(data.votes || {}).forEach(v => { voteCounts[v] = (voteCounts[v]||0) + 1; });
+
+  players.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'vote-player' + (window._getSelectedVote() === p.id ? ' selected' : '');
+    div.onclick = () => {
+      window._setSelectedVote(p.id);
+      renderVote(data);
+    };
+    div.innerHTML = `
+      <div class="avatar" style="background:${p.color}20;color:${p.color}">${p.name.charAt(0).toUpperCase()}</div>
+      <div class="vote-name">${p.name}</div>
+      <div class="vote-count">${voteCounts[p.id] || 0} 🗳️</div>
+    `;
+    list.appendChild(div);
+  });
+
+  document.getElementById('vote-host-btns').style.display = data.host === me ? 'block' : 'none';
+}
+
+async function submitVote() {
+  const vote = window._getSelectedVote();
+  if(!vote) { showToast('⚠️ Seleziona chi vuoi votare!'); return; }
+  const code = window._getMyRoom();
+  await window._updateRoom(code, {
+    [`votes/${window._myId}`]: vote,
+    [`players/${window._myId}/voted`]: vote
+  });
+  showToast('✅ Voto inviato!');
+  document.getElementById('vote-submit-btn').disabled = true;
+  document.getElementById('vote-submit-btn').textContent = '✓ Votato';
+}
+
+function showVoteResults() {
+  const data = window._getRoomData();
+  const code = window._getMyRoom();
+  window._updateRoom(code, { status: 'results' });
+}
+
+// ==================== RESULTS ====================
+function renderResults(data) {
+  if(!data) return;
+  const votes = data.votes || {};
+  const players = data.players || {};
+  const impostors = data.impostors || [];
+
+  // Count votes
+  const voteCounts = {};
+  Object.values(votes).forEach(v => { voteCounts[v] = (voteCounts[v]||0) + 1; });
+
+  // Most voted
+  let maxVotes = 0, mostVoted = null;
+  Object.entries(voteCounts).forEach(([id, cnt]) => {
+    if(cnt > maxVotes) { maxVotes = cnt; mostVoted = id; }
+  });
+
+  const impostorCaught = impostors.includes(mostVoted);
+  document.getElementById('results-title').textContent = impostorCaught ? '🎉 INNOCENTI VINCONO!' : '🕵️ IMPOSTORE VINCE!';
+  document.getElementById('results-subtitle').textContent = impostorCaught ? 'Avete trovato l\'impostore!' : 'L\'impostore è rimasto nascosto…';
+
+  const impostorNames = impostors.map(id => players[id]?.name || 'Sconosciuto').join(' e ');
+  document.getElementById('results-impostor').textContent = impostorNames;
+  document.getElementById('results-word').textContent = data.word || '—';
+
+  const list = document.getElementById('results-list');
+  list.innerHTML = '';
+  Object.values(players).forEach(p => {
+    const votedFor = votes[p.id] ? (players[votes[p.id]]?.name || '?') : 'Nessuno';
+    const isWinner = impostorCaught ? !impostors.includes(p.id) : impostors.includes(p.id);
+    const row = document.createElement('div');
+    row.className = 'result-row' + (isWinner ? ' winner' : ' loser');
+    row.innerHTML = `
+      <div class="avatar" style="background:${p.color}20;color:${p.color}">${p.name.charAt(0).toUpperCase()}</div>
+      <div style="flex:1"><div class="bold">${p.name}</div><div class="text-dim text-sm">Voto: ${votedFor}</div></div>
+      ${impostors.includes(p.id) ? '<span class="badge badge-red">IMPOSTORE</span>' : '<span class="badge badge-blue">INNOCENTE</span>'}
+      ${isWinner ? '<span>🏆</span>' : ''}
+    `;
+    list.appendChild(row);
+  });
+
+  const amH = data.host === window._myId;
+  document.getElementById('results-host-btns').style.display = amH ? 'block' : 'none';
+  document.getElementById('results-player-btns').style.display = amH ? 'none' : 'block';
+}
+
+// ==================== REVEAL OVERLAY ====================
+function showReveal(html) {
+  document.getElementById('reveal-content').innerHTML = html;
+  document.getElementById('reveal-overlay').classList.remove('hidden');
+}
+
+function hideReveal() {
+  document.getElementById('reveal-overlay').classList.add('hidden');
+}
+
+// ==================== DISCUSSION NAV ====================
+async function goToDiscussion() {
+  const code = window._getMyRoom();
+  await window._updateRoom(code, { status: 'discussion' });
+}
+</script>
+
+<!-- Firebase init note -->
+<div style="display:none" id="setup-note">
+  Per il multiplayer reale, sostituisci firebaseConfig con le tue credenziali Firebase.
+  Vai su console.firebase.google.com → Crea progetto → Realtime Database → Copia config
+</div>
+
+</body>
+</html>
